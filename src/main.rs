@@ -1,4 +1,12 @@
-use std::{env, process::Command, time::Instant};
+use std::{env, io, process::Command, time::Instant};
+
+fn command_failed(c: &Command, e: &io::Error) {
+    println!(
+        "Failed to run command `{}` with error message: \n\t{}",
+        c.get_program().to_str().unwrap(),
+        e.to_string()
+    );
+}
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -17,7 +25,15 @@ fn main() {
 
     let start = Instant::now();
 
-    command.spawn().unwrap().wait().unwrap();
+    match command.spawn() {
+        Ok(mut child) => {
+            match child.wait() {
+                Ok(_) => (),
+                Err(e) => command_failed(&command, &e)
+            }
+        },
+        Err(e) => command_failed(&command, &e)
+    }
 
     let time_cost = start.elapsed();
     println!(
